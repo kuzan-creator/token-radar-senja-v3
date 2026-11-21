@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar Senja v3 — Fitted Launch-Value Board</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Token Radar Senja <span class="v3">v3</span></h1>
+    <p class="sub">A fitted launch-value board: what a pre-token protocol's token would be worth — and how to farm it.</p>
+  </div>
+  <div class="topmeta">
+    <div>Snapshot <b id="mAsOf">—</b></div>
+    <div><b id="mRows">—</b> rows · watchlist <b id="mWatch">—</b></div>
+    <div>Total implied <b id="mTotal">—</b></div>
+  </div>
+</header>
+
+<section class="kpis" id="kpis" aria-label="Headline evidence"></section>
+
+<section class="farmnext">
+  <h2>Farm next — best dollars per hour <span class="hint">band-low net on a $1,500 deposit, 155 minutes of work</span></h2>
+  <div class="cards" id="farmNext"></div>
+</section>
+
+<section class="census">
+  <h2>Where all 758 protocols went <span class="hint">every protocol in exactly one group</span></h2>
+  <div class="bar" id="censusBar"></div>
+  <div class="legend" id="censusLegend"></div>
+</section>
+
+<section class="controls">
+  <input id="q" type="search" placeholder="Search name or slug…" aria-label="Search">
+  <select id="cat" aria-label="Category"><option value="">All categories</option></select>
+  <select id="chain" aria-label="Chain"><option value="">All chains</option></select>
+  <select id="sort" aria-label="Sort">
+    <option value="imp">Sort: implied value</option>
+    <option value="tvl">Sort: TVL</option>
+    <option value="odds">Sort: token odds</option>
+    <option value="net">Sort: net $ / hour</option>
+    <option value="age">Sort: age</option>
+  </select>
+  <label class="ctl">Deposit
+    <select id="dep">
+      <option value="500">$500</option>
+      <option value="1000">$1,000</option>
+      <option value="1500" selected>$1,500</option>
+      <option value="5000">$5,000</option>
+    </select>
+  </label>
+  <label class="ctl">Horizon
+    <select id="hor">
+      <option value="90">90 days</option>
+      <option value="180" selected>180 days</option>
+      <option value="365">365 days</option>
+    </select>
+  </label>
+  <label class="ctl">Pool share
+    <input id="share" type="range" min="1" max="10" step="1" value="5">
+    <b id="shareV">5%</b>
+  </label>
+  <div class="tabs" role="tablist">
+    <button data-tab="all" class="on">All</button>
+    <button data-tab="farm">FARM</button>
+    <button data-tab="marginal">MARGINAL</button>
+    <button data-tab="skip">SKIP</button>
+    <button data-tab="watch">Watchlist</button>
+  </div>
+  <button id="csvBtn" class="exp">Export CSV</button>
+  <button id="jsonBtn" class="exp">Export JSON</button>
+  <div class="count" id="count"></div>
+</section>
+
+<main>
+<table id="board">
+  <thead><tr>
+    <th data-k="rank">#</th><th data-k="name">Protocol</th><th data-k="cat">Category</th>
+    <th data-k="chain">Chain</th><th data-k="tvl">TVL</th><th data-k="chg">7d</th><th data-k="age">Age</th>
+    <th data-k="fit">Fitted</th><th data-k="odds">Odds</th><th data-k="imp">Implied</th>
+    <th>Band</th><th data-k="net">Net $1.5K</th><th data-k="hr">$/h</th><th data-k="verdict">Verdict</th><th>Range</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+</main>
+
+<section id="detail" class="detail" hidden></section>
+
+<section class="evidence">
+  <h2>Out-of-sample evidence — the numbers this board stands on</h2>
+  <h3>Value model: log(market cap) on the priced comps</h3>
+  <p class="evnote" id="evValueNote">Comps are the token-bearing peers whose market cap sits within [0.02, 2] of their TVL. Every term below was kept only if it won both tests: leave-one-out and a walk-forward split at the median listing date.</p>
+  <table class="ev" id="tTerms"><thead><tr><th>Terms</th><th>R²</th><th>LOO miss</th><th>Walk-fwd miss</th><th>Verdict</th><th>Why</th></tr></thead><tbody></tbody></table>
+  <h3>The same fits on all 128 priced peers, untrimmed</h3>
+  <table class="ev" id="tAll"><thead><tr><th>Terms</th><th>R²</th><th>LOO miss</th><th>Walk-fwd miss</th><th>Note</th></tr></thead><tbody></tbody></table>
+  <h3>Token odds: P(a token is recorded)</h3>
+  <p class="evnote" id="evOddsNote">Logistic fit on the listed peers at or above $25M of TVL plus the board rows. Features: log TVL, age (capped at 6y, missing counts as the peer median), 7-day growth clamped to ±50%, log(chains).</p>
+  <table class="ev" id="tOdds"><thead><tr><th>Check</th><th>This board</th><th>Base rate</th><th>What it means</th></tr></thead><tbody></tbody></table>
+  <table class="ev" id="tCal"><thead><tr><th>Odds quintile</th><th>Predicted</th><th>Actually listed</th><th>n</th></tr></thead><tbody></tbody></table>
+  <h3>Range honesty: do the bands hold what they claim?</h3>
+  <p class="evnote">Bands are the implied value × exp(±LOO) for P25–P75 and × exp(±1.9·LOO) for P10–P90, counted on leave-one-out predictions over the 94 comps — no row scores its own fit.</p>
+  <table class="ev" id="tRange"><thead><tr><th>Band</th><th>Stated coverage</th><th>Real caps inside</th><th>Read</th></tr></thead><tbody></tbody></table>
+  <div class="caveats" id="caveats"></div>
+</section>
+
+<section class="integrity">
+  <h2>Integrity — check it yourself</h2>
+  <div class="checks" id="checks"></div>
+  <p class="method" id="method"></p>
+</section>
+
+<footer>
+  <p>Token Radar Senja v3 · model <b>radar-3</b> · built by an AI agent for make.fun's token-radar-01 bounty · the snapshot is sealed 2026-11-14; nothing here fetches the network.</p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
